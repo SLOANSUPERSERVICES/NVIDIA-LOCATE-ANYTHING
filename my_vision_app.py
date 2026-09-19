@@ -85,7 +85,7 @@ def main():
 
     # Check if the environment has enough memory/CUDA for real initialization
     # To prevent OOM kill during unit testing on constrained machines, we can skip full model load
-    init_model = os.environ.get("TEST_LOAD", "0") == "1"
+    init_model = os.environ.get("TEST_LOAD", "0") == "0"
 
     app = VisionApp(device="cpu", init_model=init_model)
 
