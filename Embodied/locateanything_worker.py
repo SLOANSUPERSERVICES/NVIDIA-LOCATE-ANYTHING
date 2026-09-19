@@ -17,6 +17,9 @@ import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer, AutoProcessor
 
+_BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+_POINT_PATTERN = re.compile(r"<box><(\d+)><(\d+)></box>")
+
 
 class LocateAnythingWorker:
     """Stateful worker that loads the model once and serves perception queries."""
@@ -499,26 +502,32 @@ class LocateAnythingWorker:
 
         Coordinates in model output are normalized integers in [0, 1000].
         """
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+
         boxes = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>", answer):
-            x1, y1, x2, y2 = [int(g) for g in m.groups()]
+        for m in _BOX_PATTERN.finditer(answer):
+            x1, y1, x2, y2 = m.groups()
             boxes.append({
-                "x1": x1 / 1000 * image_width,
-                "y1": y1 / 1000 * image_height,
-                "x2": x2 / 1000 * image_width,
-                "y2": y2 / 1000 * image_height,
+                "x1": int(x1) * w_scale,
+                "y1": int(y1) * h_scale,
+                "x2": int(x2) * w_scale,
+                "y2": int(y2) * h_scale,
             })
         return boxes
 
     @staticmethod
     def parse_points(answer: str, image_width: int, image_height: int) -> list[dict]:
         """Parse model output into pixel-coordinate points."""
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+
         points = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)></box>", answer):
-            x, y = int(m.group(1)), int(m.group(2))
+        for m in _POINT_PATTERN.finditer(answer):
+            x, y = m.groups()
             points.append({
-                "x": x / 1000 * image_width,
-                "y": y / 1000 * image_height,
+                "x": int(x) * w_scale,
+                "y": int(y) * h_scale,
             })
         return points
 
