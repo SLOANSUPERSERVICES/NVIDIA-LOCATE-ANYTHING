@@ -1,0 +1,3 @@
+## 2024-05-20 - Re.finditer is slow, caching Regex compiles speeds up parsing
+**Learning:** `re.finditer(r"...", answer)` is significantly slower than pre-compiling the regex in Python. Since `parse_boxes` and `parse_points` are called repeatedly for model output parsing, the `re.compile()` should be lifted to module level. Extracting integers from `m.groups()` is also slightly faster.
+**Action:** Always pre-compile regex patterns at the module level when they are used in tight loops or parsing functions called repeatedly. Pre-compute constant math ratios like `w / 1000.0` outside of regex parsing loops.

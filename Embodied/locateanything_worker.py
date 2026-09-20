@@ -493,32 +493,41 @@ class LocateAnythingWorker:
 
     # ---- Utility: parse model output ----
 
+    _BOX_REGEX = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+    _POINT_REGEX = re.compile(r"<box><(\d+)><(\d+)></box>")
+
     @staticmethod
     def parse_boxes(answer: str, image_width: int, image_height: int) -> list[dict]:
         """Parse model output into pixel-coordinate bounding boxes.
 
         Coordinates in model output are normalized integers in [0, 1000].
         """
+        # Lightning Bolt optimization: Pre-compute multipliers and compile regex to avoid overhead in loops
+        w_ratio = image_width / 1000.0
+        h_ratio = image_height / 1000.0
         boxes = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>", answer):
-            x1, y1, x2, y2 = [int(g) for g in m.groups()]
+        for m in LocateAnythingWorker._BOX_REGEX.finditer(answer):
+            x1, y1, x2, y2 = m.groups()
             boxes.append({
-                "x1": x1 / 1000 * image_width,
-                "y1": y1 / 1000 * image_height,
-                "x2": x2 / 1000 * image_width,
-                "y2": y2 / 1000 * image_height,
+                "x1": int(x1) * w_ratio,
+                "y1": int(y1) * h_ratio,
+                "x2": int(x2) * w_ratio,
+                "y2": int(y2) * h_ratio,
             })
         return boxes
 
     @staticmethod
     def parse_points(answer: str, image_width: int, image_height: int) -> list[dict]:
         """Parse model output into pixel-coordinate points."""
+        # Lightning Bolt optimization: Pre-compute multipliers and compile regex to avoid overhead in loops
+        w_ratio = image_width / 1000.0
+        h_ratio = image_height / 1000.0
         points = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)></box>", answer):
-            x, y = int(m.group(1)), int(m.group(2))
+        for m in LocateAnythingWorker._POINT_REGEX.finditer(answer):
+            x, y = m.groups()
             points.append({
-                "x": x / 1000 * image_width,
-                "y": y / 1000 * image_height,
+                "x": int(x) * w_ratio,
+                "y": int(y) * h_ratio,
             })
         return points
 
