@@ -17,6 +17,8 @@ import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer, AutoProcessor
 
+_BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+_POINT_PATTERN = re.compile(r"<box><(\d+)><(\d+)></box>")
 
 class LocateAnythingWorker:
     """Stateful worker that loads the model once and serves perception queries."""
@@ -126,7 +128,9 @@ class LocateAnythingWorker:
         top = max(0, min(h - 1, round(top)))
         right = max(left + 1, min(w, round(right)))
         bottom = max(top + 1, min(h, round(bottom)))
-        return image.crop((left, top, right, bottom)).convert("RGB")
+        cropped = image.crop((left, top, right, bottom))
+        # Performance optimization: Only convert if not already RGB
+        return cropped if cropped.mode == "RGB" else cropped.convert("RGB")
 
     @staticmethod
     def _replace_visual_prompt_text(
@@ -160,10 +164,11 @@ class LocateAnythingWorker:
                 self._crop_visual_prompt(image, visual_prompt_box, visual_prompt_box_format)
             )
         if visual_prompt is not None:
+            # Performance optimization: Only convert if not already RGB
             if isinstance(visual_prompt, Image.Image):
-                visual_prompts.append(visual_prompt.convert("RGB"))
+                visual_prompts.append(visual_prompt if visual_prompt.mode == "RGB" else visual_prompt.convert("RGB"))
             else:
-                visual_prompts.extend(img.convert("RGB") for img in visual_prompt)
+                visual_prompts.extend(img if img.mode == "RGB" else img.convert("RGB") for img in visual_prompt)
 
         if visual_prompts:
             question = self._replace_visual_prompt_text(question, "<image-2>", replace_text)
@@ -500,13 +505,15 @@ class LocateAnythingWorker:
         Coordinates in model output are normalized integers in [0, 1000].
         """
         boxes = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>", answer):
-            x1, y1, x2, y2 = [int(g) for g in m.groups()]
+        # Performance optimization: pre-calculate scale factors and use pre-compiled regex
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+        for m in _BOX_PATTERN.finditer(answer):
             boxes.append({
-                "x1": x1 / 1000 * image_width,
-                "y1": y1 / 1000 * image_height,
-                "x2": x2 / 1000 * image_width,
-                "y2": y2 / 1000 * image_height,
+                "x1": int(m.group(1)) * w_scale,
+                "y1": int(m.group(2)) * h_scale,
+                "x2": int(m.group(3)) * w_scale,
+                "y2": int(m.group(4)) * h_scale,
             })
         return boxes
 
@@ -514,11 +521,13 @@ class LocateAnythingWorker:
     def parse_points(answer: str, image_width: int, image_height: int) -> list[dict]:
         """Parse model output into pixel-coordinate points."""
         points = []
-        for m in re.finditer(r"<box><(\d+)><(\d+)></box>", answer):
-            x, y = int(m.group(1)), int(m.group(2))
+        # Performance optimization: pre-calculate scale factors and use pre-compiled regex
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+        for m in _POINT_PATTERN.finditer(answer):
             points.append({
-                "x": x / 1000 * image_width,
-                "y": y / 1000 * image_height,
+                "x": int(m.group(1)) * w_scale,
+                "y": int(m.group(2)) * h_scale,
             })
         return points
 
