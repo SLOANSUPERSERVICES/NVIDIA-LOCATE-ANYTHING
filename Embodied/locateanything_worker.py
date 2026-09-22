@@ -17,6 +17,8 @@ import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer, AutoProcessor
 
+_BOX_PATTERN = re.compile(r"<box><(\d+)><(\d+)><(\d+)><(\d+)></box>")
+_POINT_PATTERN = re.compile(r"<box><(\d+)><(\d+)></box>")
 
 class LocateAnythingWorker:
     """Stateful worker that loads the model once and serves perception queries."""
@@ -126,7 +128,9 @@ class LocateAnythingWorker:
         top = max(0, min(h - 1, round(top)))
         right = max(left + 1, min(w, round(right)))
         bottom = max(top + 1, min(h, round(bottom)))
-        return image.crop((left, top, right, bottom)).convert("RGB")
+        cropped = image.crop((left, top, right, bottom))
+        # Performance optimization: Only convert if not already RGB
+        return cropped if cropped.mode == "RGB" else cropped.convert("RGB")
 
     @staticmethod
     def _replace_visual_prompt_text(
@@ -160,10 +164,11 @@ class LocateAnythingWorker:
                 self._crop_visual_prompt(image, visual_prompt_box, visual_prompt_box_format)
             )
         if visual_prompt is not None:
+            # Performance optimization: Only convert if not already RGB
             if isinstance(visual_prompt, Image.Image):
-                visual_prompts.append(visual_prompt.convert("RGB"))
+                visual_prompts.append(visual_prompt if visual_prompt.mode == "RGB" else visual_prompt.convert("RGB"))
             else:
-                visual_prompts.extend(img.convert("RGB") for img in visual_prompt)
+                visual_prompts.extend(img if img.mode == "RGB" else img.convert("RGB") for img in visual_prompt)
 
         if visual_prompts:
             question = self._replace_visual_prompt_text(question, "<image-2>", replace_text)
@@ -513,6 +518,15 @@ class LocateAnythingWorker:
                 "y1": int(y1) * h_ratio,
                 "x2": int(x2) * w_ratio,
                 "y2": int(y2) * h_ratio,
+        # Performance optimization: pre-calculate scale factors and use pre-compiled regex
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+        for m in _BOX_PATTERN.finditer(answer):
+            boxes.append({
+                "x1": int(m.group(1)) * w_scale,
+                "y1": int(m.group(2)) * h_scale,
+                "x2": int(m.group(3)) * w_scale,
+                "y2": int(m.group(4)) * h_scale,
             })
         return boxes
 
@@ -528,6 +542,13 @@ class LocateAnythingWorker:
             points.append({
                 "x": int(x) * w_ratio,
                 "y": int(y) * h_ratio,
+        # Performance optimization: pre-calculate scale factors and use pre-compiled regex
+        w_scale = image_width / 1000.0
+        h_scale = image_height / 1000.0
+        for m in _POINT_PATTERN.finditer(answer):
+            points.append({
+                "x": int(m.group(1)) * w_scale,
+                "y": int(m.group(2)) * h_scale,
             })
         return points
 
