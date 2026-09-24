@@ -40,7 +40,11 @@ class VisionApp:
         if self.worker is None:
             return [{"x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 100.0}] # Dummy result
 
-        img = Image.open(image_path).convert("RGB")
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+
         print(f"Running detection for categories: {categories}")
         result = self.worker.detect(img, categories)
 
@@ -55,7 +59,11 @@ class VisionApp:
         if self.worker is None:
             return [{"x": 50.0, "y": 50.0}] # Dummy result
 
-        img = Image.open(image_path).convert("RGB")
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+
         print(f"Pointing at: '{phrase}'")
         result = self.worker.point(img, phrase)
 
@@ -70,7 +78,11 @@ class VisionApp:
         if self.worker is None:
             return [{"x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 100.0}] if output_type == "box" else [{"x": 50.0, "y": 50.0}]
 
-        img = Image.open(image_path).convert("RGB")
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+
         print(f"Grounding GUI element: '{phrase}' as {output_type}")
         result = self.worker.ground_gui(img, phrase, output_type=output_type)
 
