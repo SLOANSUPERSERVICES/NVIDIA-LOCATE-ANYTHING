@@ -40,6 +40,11 @@ class VisionApp:
         if self.worker is None:
             return [{"x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 100.0}] # Dummy result
 
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+
         # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
         img = Image.open(image_path)
         img = img if img.mode == "RGB" else img.convert("RGB")
@@ -57,6 +62,11 @@ class VisionApp:
         if self.worker is None:
             return [{"x": 50.0, "y": 50.0}] # Dummy result
 
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+
         # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
         img = Image.open(image_path)
         img = img if img.mode == "RGB" else img.convert("RGB")
@@ -73,6 +83,11 @@ class VisionApp:
         """
         if self.worker is None:
             return [{"x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 100.0}] if output_type == "box" else [{"x": 50.0, "y": 50.0}]
+
+        # Performance optimization: Only convert to RGB if not already in that mode
+        # to prevent unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
 
         # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
         img = Image.open(image_path)
