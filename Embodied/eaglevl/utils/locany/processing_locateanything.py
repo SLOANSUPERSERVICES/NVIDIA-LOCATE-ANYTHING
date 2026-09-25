@@ -76,7 +76,8 @@ def to_rgb(pil_image: Image.Image) -> Image.Image:
           white_background.paste(pil_image, mask=pil_image.split()[3])  # Use alpha channel as mask
           return white_background
       else:
-          return pil_image.convert("RGB")
+          # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+          return pil_image if pil_image.mode == "RGB" else pil_image.convert("RGB")
 
 def read_img_from_lmdb_v2(image_data):
     # special case for AgiBotWorld
