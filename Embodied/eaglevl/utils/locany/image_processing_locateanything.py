@@ -71,7 +71,8 @@ class LocateAnythingImageProcessor(BaseImageProcessor):
         return image
 
     def to_tensor(self, image: Image.Image) -> torch.Tensor:
-        return TF.to_tensor(image.convert("RGB"))
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        return TF.to_tensor(image if image.mode == "RGB" else image.convert("RGB"))
 
     def normalize(self, image: torch.Tensor) -> torch.Tensor:
         return TF.normalize(image, self.image_mean, self.image_std)
