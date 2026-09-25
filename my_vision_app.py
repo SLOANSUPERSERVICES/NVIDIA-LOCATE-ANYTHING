@@ -42,6 +42,8 @@ class VisionApp:
 
         img = Image.open(image_path)
         # ⚡ Bolt: Conditional conversion prevents redundant memory allocation for images already in RGB mode
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
         img = img if img.mode == "RGB" else img.convert("RGB")
         print(f"Running detection for categories: {categories}")
         result = self.worker.detect(img, categories)
@@ -59,6 +61,8 @@ class VisionApp:
 
         img = Image.open(image_path)
         # ⚡ Bolt: Conditional conversion prevents redundant memory allocation for images already in RGB mode
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
         img = img if img.mode == "RGB" else img.convert("RGB")
         print(f"Pointing at: '{phrase}'")
         result = self.worker.point(img, phrase)
@@ -76,6 +80,8 @@ class VisionApp:
 
         img = Image.open(image_path)
         # ⚡ Bolt: Conditional conversion prevents redundant memory allocation for images already in RGB mode
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
         img = img if img.mode == "RGB" else img.convert("RGB")
         print(f"Grounding GUI element: '{phrase}' as {output_type}")
         result = self.worker.ground_gui(img, phrase, output_type=output_type)
