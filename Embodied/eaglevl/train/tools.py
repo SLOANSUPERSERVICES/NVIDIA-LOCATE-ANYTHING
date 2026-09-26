@@ -347,7 +347,8 @@ def _load_visual_prompt_source_image(sample, media_root):
 
     source = image_list[0]
     if isinstance(source, Image.Image):
-        return source.convert("RGB"), image_list
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        return (source if source.mode == "RGB" else source.convert("RGB")), image_list
 
     image_path = _resolve_image_path(source, media_root)
     if image_path is None or image_path.startswith(("http://", "https://", "data:image")):
@@ -356,7 +357,9 @@ def _load_visual_prompt_source_image(sample, media_root):
         image_path = image_path[7:]
 
     try:
-        return Image.open(image_path).convert("RGB"), image_list
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
+        return (img if img.mode == "RGB" else img.convert("RGB")), image_list
     except Exception as exc:
         logger.warning("Failed to load visual prompt source image %s: %s", image_path, exc)
         return None, image_list
@@ -400,7 +403,9 @@ def _crop_normalized_box(image: Image.Image, box):
     bottom = max(top + 1, min(height, round(y2 / 1000 * height)))
     if right <= left or bottom <= top:
         return None
-    return image.crop((left, top, right, bottom)).convert("RGB")
+    cropped = image.crop((left, top, right, bottom))
+    # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+    return cropped if cropped.mode == "RGB" else cropped.convert("RGB")
 
 
 def apply_visual_prompt_to_sample(sample, media_root):
@@ -508,7 +513,8 @@ def process_multimodal_sample(
             if isinstance(img, str):
                 image_data.append(osp.join(media_root, img))
             elif isinstance(img, Image.Image):
-                image_data.append(img.convert("RGB"))
+                # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+                image_data.append(img if img.mode == "RGB" else img.convert("RGB"))
             elif isinstance(img, dict):
                 if 'video' in img:  # Support the case where video frames are treated as images
                     video_data.append(osp.join(media_root, img['video']))
