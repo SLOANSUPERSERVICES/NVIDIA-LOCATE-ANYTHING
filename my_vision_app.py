@@ -86,6 +86,34 @@ class VisionApp:
         elif output_type == "point":
             return self.worker.parse_points(result["answer"], w, h)
 
+    def decode_barcodes(self, image_path):
+        """
+        Detect and decode all barcodes and QR codes in the image.
+        """
+        if self.worker is None:
+            return [{"barcode_data": "dummy123", "box": {"x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 100.0}}] # Dummy result
+
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+        print(f"Decoding barcodes in {image_path}")
+        result = self.worker.decode_barcodes(img)
+        return result["answer"]
+
+    def read_shipping_labels(self, image_path):
+        """
+        Read and parse all shipping labels in the image, including parcels and pallets.
+        """
+        if self.worker is None:
+            return [{"tracking_number": "TRK987654321", "box": {"x1": 10.0, "y1": 10.0, "x2": 150.0, "y2": 150.0}}] # Dummy result
+
+        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+        img = Image.open(image_path)
+        img = img if img.mode == "RGB" else img.convert("RGB")
+        print(f"Reading shipping labels in {image_path}")
+        result = self.worker.read_shipping_labels(img)
+        return result["answer"]
+
 def main():
     print("--- LocateAnything Integration Example ---")
 
@@ -112,6 +140,14 @@ def main():
         # Example 3: GUI Grounding
         gui_element = app.ground_gui_element(dummy_image_path, "the search button", output_type="box")
         print(f"GUI Grounding Results: {gui_element}")
+
+        # Example 4: Decode Barcodes
+        barcodes = app.decode_barcodes(dummy_image_path)
+        print(f"Barcode Results: {barcodes}")
+
+        # Example 5: Read Shipping Labels
+        shipping_labels = app.read_shipping_labels(dummy_image_path)
+        print(f"Shipping Label Results: {shipping_labels}")
 
     finally:
         # Clean up dummy image

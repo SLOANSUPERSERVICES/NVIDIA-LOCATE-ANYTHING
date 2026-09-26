@@ -483,6 +483,16 @@ class LocateAnythingWorker:
         prompt = "Detect all the text in box format."
         return self.predict(image, prompt, **kwargs)
 
+    def decode_barcodes(self, image: Image.Image, **kwargs) -> dict:
+        """Barcode and QR code detection and decoding."""
+        prompt = "Detect and decode all barcodes and QR codes in the image."
+        return self.predict(image, prompt, **kwargs)
+
+    def read_shipping_labels(self, image: Image.Image, **kwargs) -> dict:
+        """Shipping label reading and parsing, including pallets."""
+        prompt = "Read and parse all shipping labels in the image, including parcels and pallets. Extract relevant information like barcodes, tracking numbers, and addresses."
+        return self.predict(image, prompt, **kwargs)
+
     def ground_gui(self, image: Image.Image, phrase: str, output_type: str = "box", **kwargs) -> dict:
         """GUI grounding (box or point)."""
         if output_type == "point":
