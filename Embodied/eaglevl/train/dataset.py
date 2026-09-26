@@ -167,7 +167,8 @@ class WeightedConcatDataset(ConcatDataset):
 def pil_loader(img_str):
     buff = io.BytesIO(img_str)
     img = Image.open(buff)
-    return img.convert('RGB')
+    # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+    return img if img.mode == 'RGB' else img.convert('RGB')
 
 
 class TCSLoader(object):
