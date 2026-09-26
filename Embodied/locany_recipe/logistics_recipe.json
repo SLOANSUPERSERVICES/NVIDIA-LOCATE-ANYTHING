@@ -1,0 +1,20 @@
+{
+  "barcode_decoding": {
+    "annotation": "data/annotations/barcode_decoding.jsonl",
+    "root": "data/images/barcodes/",
+    "repeat_time": 1.0,
+    "data_augment": true
+  },
+  "shipping_labels_parcels": {
+    "annotation": "data/annotations/shipping_labels_parcels.jsonl",
+    "root": "data/images/parcels/",
+    "repeat_time": 2.0,
+    "data_augment": true
+  },
+  "shipping_labels_pallets": {
+    "annotation": "data/annotations/shipping_labels_pallets.jsonl",
+    "root": "data/images/pallets/",
+    "repeat_time": 2.0,
+    "data_augment": true
+  }
+}
