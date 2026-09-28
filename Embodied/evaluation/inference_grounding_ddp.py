@@ -547,8 +547,9 @@ def draw_detections_on_image(image, extracted_predictions, draw_label=True):
                 radius = 5
                 draw.ellipse([x-radius, y-radius, x+radius, y+radius], fill=color, outline=color, width=2)
     
-    combined = Image.alpha_composite(img_draw, overlay).convert("RGB")
-    return combined
+    combined = Image.alpha_composite(img_draw, overlay)
+    # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+    return combined if combined.mode == "RGB" else combined.convert("RGB")
 
 
 def parse_prediction(text, w, h):
@@ -743,7 +744,9 @@ def main():
             continue
         
         try:
-            image = Image.open(full_image_path).convert("RGB")
+            img = Image.open(full_image_path)
+            # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+            image = img if img.mode == "RGB" else img.convert("RGB")
             original_w, original_h = image.size
         except Exception as e:
             print(f"[Rank {rank}] Error loading image {full_image_path}: {e}")
@@ -926,7 +929,9 @@ def main():
                 
                 if os.path.exists(full_image_path):
                     try:
-                        image = Image.open(full_image_path).convert("RGB")
+                        img = Image.open(full_image_path)
+                        # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+                        image = img if img.mode == "RGB" else img.convert("RGB")
                         # Using original image for visualization
                         video_frames.append({
                             "image": image,

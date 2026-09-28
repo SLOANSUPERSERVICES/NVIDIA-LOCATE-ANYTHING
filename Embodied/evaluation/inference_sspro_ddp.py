@@ -508,7 +508,9 @@ def main():
             continue
 
         try:
-            image = Image.open(full_image_path).convert("RGB")
+            img = Image.open(full_image_path)
+            # ⚡ Bolt: conditional RGB conversion to avoid unnecessary memory copying
+            image = img if img.mode == "RGB" else img.convert("RGB")
             original_w, original_h = image.size
         except Exception as e:
             print(f"[Rank {rank}] Error loading image {full_image_path}: {e}")
