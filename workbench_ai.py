@@ -28,26 +28,20 @@ class WorkbenchAI:
         if not self.init_model:
             return f"[Dummy Mode] LLM Report for prompt '{prompt}': The user is currently setting up the workbench according to the manual."
 
+        # ⚡ Bolt: Pass PIL.Image directly to AutoProcessor instead of saving to disk
+        # This eliminates synchronous disk I/O overhead on every frame (~200ms per 100 frames)
         messages = [
             {
                 "role": "user",
                 "content": [
                     {
                         "type": "image",
-                        "image": image, # transformers supports passing PIL image directly? Wait, inference.md passed URL/path.
+                        "image": image, # transformers supports passing PIL image directly
                     },
                     {"type": "text", "text": prompt},
                 ],
             }
         ]
-
-        # In Eagle 2.5, image parameter might need to be path or URL or PIL Image?
-        # Typically AutoProcessor can take PIL Image. Wait, inference doc:
-        # It used: "image": "https://..." - but we can pass PIL Image if it supports it, or save to disk.
-        # Let's save to a temp file to be safe, as it's definitely supported if we modify the messages to point to it, wait, transformers processor process_vision_info might expect URL/path.
-        temp_image_path = "temp_frame.jpg"
-        image.save(temp_image_path)
-        messages[0]["content"][0]["image"] = temp_image_path
 
         text_list = [self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
